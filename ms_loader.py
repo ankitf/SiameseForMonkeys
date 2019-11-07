@@ -42,5 +42,27 @@ class MSLoader:
         for category in os.listdir(train_path):
             species_path = os.path.join(train_path, category)
 
-            current_category_dictionary = {}
+            self.train_dictionary[category] = os.listdir(species_path)
+
+        # loading evaluation monkey specied categories
+        for category in os.listdir(evaluation_path):
+            species_path = os.path.join(evaluation_path, category)
+
+            self.evaluation_dictionary[category] = os.listdir(species_path)
+
+    def get_train_batch(self):
+        ''' Loads and returns a batch of train images.
+        The batch will contain images from a single category. We will have a batch size of n
+        with n/2 pairs of same category having label 1 and n/2 pairs having different categories
+        having label 0. In case the number of images in a category in smaller than n/2, 
+        the image could be repeated but paired with different category.
+
+        Returns: 
+            pairs, labels '''
+
+        
+# test
+dataset_path = '../../datasets/monkey_species/'
+batch_size = 4
+loader = MSLoader(dataset_path, batch_size)
             
