@@ -179,6 +179,39 @@ class MSLoader:
 
         return pairs, labels
 
+    def one_shot_test(self, model, number_of_tasks_per_category):
+        ''' Prepare one shot task and evaluate.
+        returns:
+            mean_accuracy: mean accuracy for the one shot task.'''
+
+        mean_global_accuracy = 0
+
+        evaluation_categories = self._evaluation_categories
+        for category in evaluation_categories:
+            mean_category_accuracy = 0
+            for _ in range(number_of_tasks_per_category):
+                images, _ = self.get_one_shot_batch()
+                probabilities = model.predict_on_batch(images)
+
+                # 0th index pair should have maximum probability, all remaining pairs are negatives
+                if np.argmax(probabilities) == 0:
+                    accuracy = 1.0
+                else:
+                    accuracy = 0.0
+
+                mean_category_accuracy += accuracy
+                mean_global_accuracy += accuracy
+            mean_category_accuracy /= number_of_tasks_per_category
+
+            print('Accuracy of category {} = {}'.format(category, str(mean_category_accuracy)))
+        
+            self._current_evaluation_category_index += 1
+
+        mean_global_accuracy /= (len(evaluation_categories) * number_of_tasks_per_category)
+        print('Mean global accuracy: {}'.format(mean_global_accuracy))
+
+        # reseting counter
+        self._current_evaluation_category_index = 0
         
 # test
 dataset_path = '../../datasets/monkey_species/'
