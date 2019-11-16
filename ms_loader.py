@@ -96,7 +96,7 @@ class MSLoader:
 
             # 2nd image of the pair, should be positive if i < batch_size / 2, else negative
             if i < self.batch_size / 2:
-                second_positive_sample_index = random.randrange(number_of_positive_samples-1)
+                second_positive_sample_index = random.randint(0, number_of_positive_samples-1)
                 if second_positive_sample_index >= current_sample_index:
                     second_positive_sample_index += 1
                 second_positive_sample_path = os.path.join(self.dataset_path, 'training', current_category,
@@ -104,7 +104,7 @@ class MSLoader:
                 image = self._load_image(second_positive_sample_path)
                 pairs[1][i, :, :, :] = image
             else : 
-                negative_category_index = random.randrange(len(self._train_categories) - 1)
+                negative_category_index = random.randint(0, len(self._train_categories) - 1)
                 if negative_category_index >= self._current_train_category_index:
                     negative_category_index += 1
                 negative_category_path = os.path.join(self.dataset_path, 'training', self._train_categories[negative_category_index])
@@ -122,10 +122,67 @@ class MSLoader:
 
         return pairs, labels
 
+    def get_one_shot_batch(self, support_set_size=-1):
+        ''' Returns One Shot task images. 
+        The selected category image will be compared with a support set of images.
+        The first pair is always labeled 1, and the remaning ones are 0's. 
+        Implementing N way learning only. N being total number of categories.'''
+        
+        all_categories = self._evaluation_categories
+        current_category_index = self._current_evaluation_category_index
+        current_category = self._evaluation_categories[current_category_index]
+        number_of_categories = len(all_categories)
+        if support_set_size == -1:
+            support_set_size = number_of_categories
+
+        # pair = [test_sample, second_samples]
+        pairs = [np.zeros((support_set_size, self.image_height, self.image_height, 3))
+                 for i in range(2)]
+        labels = np.zeros((support_set_size,))
+
+        # first pair will always be a set of positive sample images
+        labels[0] = 1
+        
+        # test image, 1st sample image in the pair
+        current_category_path = os.path.join(self.dataset_path, 'validation', current_category)
+        available_test_samples = os.listdir(current_category_path)
+        number_of_available_test_samples = len(available_test_samples)
+        test_sample_index = random.randint(0, number_of_available_test_samples-1)
+        test_sample_path = os.path.join(current_category_path, available_test_samples[test_sample_index])
+        test_image = self._load_image(test_sample_path)
+
+        pairs[0][:, :, :, :] = test_image
+
+        # 2nd sample image in the pair, 1st index will be positive sample
+        positive_sample_index = random.randint(0, number_of_available_test_samples-1)
+        positive_sample_path = os.path.join(current_category_path,
+                                            available_test_samples[positive_sample_index])
+        positive_image = self._load_image(positive_sample_path)
+
+        pairs[1][0, :, :, :] = positive_image
+
+        # 2nd sample image for rest of the batch
+        # deleting current category
+        all_categories.pop(current_category_index)
+        # iterating over all remaining categories and select random image from the available samples
+        for i, negative_category in enumerate(all_categories):
+            negative_category_path = os.path.join(self.dataset_path, 'validation',
+                                                  negative_category)
+            available_negative_samples = os.listdir(negative_category_path)
+            number_of_available_negative_samples = len(available_negative_samples)
+            negative_sample_index = random.randint(0, number_of_available_negative_samples-1)
+            negative_sample_path = os.path.join(negative_category_path,
+                                                available_negative_samples[negative_sample_index])
+            negative_image = self._load_image(negative_sample_path)
+
+            pairs[1][i+1, :, :, :] = negative_image
+
+        return pairs, labels
+
         
 # test
 dataset_path = '../../datasets/monkey_species/'
 batch_size = 4
 loader = MSLoader(dataset_path, batch_size)
 loader.get_train_batch()
-
+loader.get_one_shot_batch()
