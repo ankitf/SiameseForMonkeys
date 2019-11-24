@@ -51,8 +51,36 @@ class SiameseNet:
         
         self.model.compile(loss='binary_crossentropy', metrics=['binary_accuracy'],
                            optimizer=optimizer)
-        
 
+
+    def train_siamese_net(self, number_of_iterations, evaluate_each,
+                          model_name):
+        ''' Training of Siamese Network.'''
+
+        # Store losses at evaluate_each iterations
+        train_losses = np.zeros(shape=(evaluate_each))
+        train_accuracies = np.zeros(shape=(evaluate_each))
+        count = 0
+        early_stop = 0
+
+        best_validation_accuracy = 0.0
+        best_accuracy_iteration = 0.0
+        validation_accuracy = 0.0
+
+        # Train loop
+        for iteration in range(number_of_iterations):
+            # train set
+            images, labels = self.ms_loader.get_train_batch()
+            train_loss, train_accuracy = self.model.train_on_batch(images, labels)
+
+            train_losses[count] = train_loss
+            train_accuracies[count] = train_accuracy
+
+            # validation set
+            count += 1
+            print('Iteration {}/{}: Train Loss: {}, Train Accuracy: {}'.format(
+                iteration, number_of_iterations, train_loss, train_accuracy))
+        
 # test
 dataset_path = '../../datasets/monkey_species/'
 log_path = './'
