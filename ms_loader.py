@@ -25,8 +25,8 @@ class MSLoader:
         self.dataset_path = dataset_path
         self.train_dictionary = {}
         self.evaluation_dictionary = {}
-        self.image_width = 500
-        self.image_height = 500
+        self.image_width = 224
+        self.image_height = 224
         self.batch_size = batch_size
         assert (batch_size % 2) == 0, 'batch size can not be odd'
         self._train_categories = []
@@ -97,16 +97,20 @@ class MSLoader:
             # 2nd image of the pair, should be positive if i < batch_size / 2, else negative
             if i < self.batch_size / 2:
                 second_positive_sample_index = random.randint(0, number_of_positive_samples-1)
-                if second_positive_sample_index >= current_sample_index:
-                    second_positive_sample_index += 1
+                # if its the same image, choose another
+                #if second_positive_sample_index == current_sample_index:
+                #    second_positive_sample_index += 1
+                # import pdb
+                # pdb.set_trace()
                 second_positive_sample_path = os.path.join(self.dataset_path, 'training', current_category,
                                                            available_positive_samples[second_positive_sample_index])
                 image = self._load_image(second_positive_sample_path)
                 pairs[1][i, :, :, :] = image
             else : 
                 negative_category_index = random.randint(0, len(self._train_categories) - 1)
-                if negative_category_index >= self._current_train_category_index:
-                    negative_category_index += 1
+                # make the the category is different
+                while negative_category_index == self._current_train_category_index:
+                    negative_category_index =random.randint(0, len(self._train_categories) - 1)
                 negative_category_path = os.path.join(self.dataset_path, 'training', self._train_categories[negative_category_index])
                 available_negative_samples = os.listdir(negative_category_path)
                 number_of_negative_samples = len(available_negative_samples)
@@ -213,9 +217,9 @@ class MSLoader:
         # reseting counter
         self._current_evaluation_category_index = 0
         
-# test
-dataset_path = '../../datasets/monkey_species/'
-batch_size = 4
-loader = MSLoader(dataset_path, batch_size)
-loader.get_train_batch()
-loader.get_one_shot_batch()
+# # test
+# dataset_path = '../../datasets/monkey_species/'
+# batch_size = 4
+# loader = MSLoader(dataset_path, batch_size)
+# loader.get_train_batch()
+# loader.get_one_shot_batch()
