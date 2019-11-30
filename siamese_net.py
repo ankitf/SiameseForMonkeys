@@ -77,7 +77,6 @@ class SiameseNet:
             # train set
             images, labels = self.ms_loader.get_train_batch()
 
-            print('Training On batch ... ')
             train_loss, train_accuracy = self.model.train_on_batch(images, labels)
             
             train_losses[count] = train_loss
@@ -88,5 +87,34 @@ class SiameseNet:
             print('Iteration {}/{}: Train Loss: {}, Train Accuracy: {}'.format(
                 iteration, number_of_iterations, train_loss, train_accuracy))
 
-            
-            
+
+            # Perform one shot task each evaluate_each iteration
+            if (iteration + 1) % evaluate_each == 0:
+                number_of_tasks_per_category = 10
+
+                validation_accuracy = self.ms_loader.one_shot_test(self.model, number_of_tasks_per_category)
+
+                count = 0
+
+                if validation_accuracy > best_validation_accuracy:
+                    best_validation_accuracy = validation_accuracy
+                    best_accuracy_iteration = iteration
+
+                    model_json = self.model.to_json()
+
+                    if not os.path.exists('./models'):
+                        os.makedirs('./models')
+                    
+                    with open('models/' + model_name + '.json', "w") as json_file:
+                        json_file.write(model_json)
+                    self.model.save_weights('models/' + model_name + '.h5')
+                        
+
+            if iteration - best_accuracy_iteration > 10000:
+                print('Accuracy not improving. Early Stopping')
+                print('Best Validation Accuracy = ' +
+                      str(best_validation_accuracy))
+                break
+
+        print('Training End.')
+        return best_validation_accuracy
