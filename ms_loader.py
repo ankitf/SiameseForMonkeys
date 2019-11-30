@@ -216,6 +216,8 @@ class MSLoader:
 
         # reseting counter
         self._current_evaluation_category_index = 0
+
+        return mean_global_accuracy
         
 # # test
 # dataset_path = '../../datasets/monkey_species/'
