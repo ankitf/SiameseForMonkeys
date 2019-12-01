@@ -170,6 +170,10 @@ class MSLoader:
         # all_categories.pop(current_category_index)
         # iterating over all remaining categories and select random image from the available samples
         for i, negative_category in enumerate(all_categories):
+            # Skipping Current Category
+            if negative_category == current_category:
+                continue
+            
             negative_category_path = os.path.join(self.dataset_path, 'validation',
                                                   negative_category)
             available_negative_samples = os.listdir(negative_category_path)
@@ -179,7 +183,12 @@ class MSLoader:
                                                 available_negative_samples[negative_sample_index])
             negative_image = self._load_image(negative_sample_path)
 
-            pairs[1][i+1, :, :, :] = negative_image
+            # skipping 0th index
+            if not i == 0:
+                pairs[1][i, :, :, :] = negative_image
+
+
+        # 2nd sample image for rest of the batch. 
 
         return pairs, labels
 
