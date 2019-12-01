@@ -20,6 +20,7 @@ class SiameseNet:
         self.input_shape = (224, 224, 3)
         self.model = []
         self.learning_rate = learning_rate
+        self.summary_writer = tf.summary.FileWriter(tensorboard_log_path)
         self.ms_loader = MSLoader(dataset_path=dataset_path, batch_size=batch_size)
         self._build_siamese_net()
 
@@ -57,6 +58,28 @@ class SiameseNet:
         
         self.model.compile(loss='binary_crossentropy', metrics=['binary_accuracy'],
                            optimizer=optimizer)
+
+    def _write_logs_to_tensorboard(self, current_iteration, train_losses, train_accuracies,
+                                   validation_accuracy, evaluate_each):
+        ''' Visualize loss and accuracy  in tensorboard. '''
+        summary = tf.Summary()
+
+        for index in range(evaluate_each):
+            value = summary.value.add()
+            value.simple_value = train_losses[index]
+            value.tag = 'Train Loss'
+
+            value = summary.value.add()
+            value.simple_value = train_accuracies[index]
+            value.tag = 'Train Accuracy'
+
+            if index == (evaluate_each - 1):
+                value = summary.value.add()
+                value.simple_value = validation_accuracy
+                value.tag = 'One Shot Validation Accuracy'
+
+            self.summary_writer.add_summary(summary, current_iteration - evaluate_each + index + 1)
+            self.summary_writer.flush()
         
     def train_siamese_net(self, number_of_iterations, evaluate_each,
                           model_name):
@@ -93,6 +116,9 @@ class SiameseNet:
                 number_of_tasks_per_category = 10
 
                 validation_accuracy = self.ms_loader.one_shot_test(self.model, number_of_tasks_per_category)
+
+                self._write_logs_to_tensorboard(iteration, train_losses, train_accuracies,
+                                                validation_accuracy, evaluate_each)
 
                 count = 0
 
