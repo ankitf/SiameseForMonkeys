@@ -167,9 +167,13 @@ class MSLoader:
 
         # 2nd sample image for rest of the batch
         # deleting current category
-        all_categories.pop(current_category_index)
+        # all_categories.pop(current_category_index)
         # iterating over all remaining categories and select random image from the available samples
         for i, negative_category in enumerate(all_categories):
+            # Skipping Current Category
+            if negative_category == current_category:
+                continue
+            
             negative_category_path = os.path.join(self.dataset_path, 'validation',
                                                   negative_category)
             available_negative_samples = os.listdir(negative_category_path)
@@ -179,7 +183,12 @@ class MSLoader:
                                                 available_negative_samples[negative_sample_index])
             negative_image = self._load_image(negative_sample_path)
 
-            pairs[1][i+1, :, :, :] = negative_image
+            # skipping 0th index
+            if not i == 0:
+                pairs[1][i, :, :, :] = negative_image
+
+
+        # 2nd sample image for rest of the batch. 
 
         return pairs, labels
 
@@ -191,6 +200,7 @@ class MSLoader:
         mean_global_accuracy = 0
 
         evaluation_categories = self._evaluation_categories
+        
         for category in evaluation_categories:
             mean_category_accuracy = 0
             for _ in range(number_of_tasks_per_category):
@@ -208,14 +218,18 @@ class MSLoader:
             mean_category_accuracy /= number_of_tasks_per_category
 
             print('Accuracy of category {} = {}'.format(category, str(mean_category_accuracy)))
-        
+
             self._current_evaluation_category_index += 1
+            if self._current_evaluation_category_index >= (len(evaluation_categories) -1):
+                self._current_evaluation_category_index = 0
 
         mean_global_accuracy /= (len(evaluation_categories) * number_of_tasks_per_category)
         print('Mean global accuracy: {}'.format(mean_global_accuracy))
 
         # reseting counter
         self._current_evaluation_category_index = 0
+
+        return mean_global_accuracy
         
 # # test
 # dataset_path = '../../datasets/monkey_species/'
