@@ -3,7 +3,7 @@ from siamese_net import SiameseNet
 
 
 def main():
-    dataset_path = '../../datasets/monkey_species/'
+    dataset_path = './monkey_species'
     learning_rate = 10e-4
     batch_size = 8
 
